@@ -1,4 +1,4 @@
-name: Build  Auto Release
+name: Build & Auto Release
 
 on:
   push:
@@ -29,6 +29,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 8.14.2
+
       - name: Set full version
         id: set_version
         run: |
@@ -41,7 +44,9 @@ jobs:
           cat gradle.properties
 
       - name: Gradle build + test
-        run: ./gradlew clean test jar -Pversion=${{ env.FULL_VERSION }}
+        run: |
+          chmod +x gradlew
+          ./gradlew clean test jar -Pversion=${{ env.FULL_VERSION }}
 
       - name: Package source zip
         run: |
