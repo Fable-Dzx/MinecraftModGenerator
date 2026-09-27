@@ -7,10 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  # 基础版本，手动修改 major/minor
   BASE_VERSION: "0.1"
-  # 自动拼接完整版本号 BASE_VERSION + github.run_number
-  FULL_VERSION: "${{ env.BASE_VERSION }}.${{ github.run_number }}"
   ARTIFACT_NAME: "minecraft-mod-generator-src"
 
 jobs:
@@ -32,6 +29,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Set full version
+        id: set_version
+        run: |
+          echo "FULL_VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_ENV
+          echo "FULL_VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}"
+
       - name: Set version in gradle.properties
         run: |
           echo "projectVersion=${{ env.FULL_VERSION }}" >> gradle.properties
@@ -43,7 +46,7 @@ jobs:
       - name: Package source zip
         run: |
           zip -r ${{ env.ARTIFACT_NAME }}-${{ env.FULL_VERSION }}.zip . \
-            -x "build/*" ".gradle/*" ".github/workflows/build/*" "*.git/*" "*.zip"
+            -x "build/*" ".gradle/*" ".github/workflows/build/*" ".git/*" "*.zip"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -53,12 +56,10 @@ jobs:
             generator-core/build/libs/*.jar
             ${{ env.ARTIFACT_NAME }}-${{ env.FULL_VERSION }}.zip
 
-      # PR分支只构建，不发布Release
       - name: Skip release on PR
         if: github.event_name == 'pull_request'
         run: echo "Pull request, skip release"
 
-      # main分支推送：自动创建Release + 上传制品
       - name: Create GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
